@@ -25,6 +25,7 @@
             min-height: 150px; /* Um pouco mais alto para o conteúdo */
             line-height: 1.6;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            word-wrap: break-word; /* Garante que o texto longo não exceda a largura */
         }
         .loading {
             text-align: center;
@@ -58,8 +59,10 @@
     </div>
 
     <script>
-        // URL do seu Webhook do n8n (Trigger)
-        const n8nWebhookUrl = 'https://n8n-prometheus.duckdns.org/webhook-test/5a3746c9-4d77-475b-acdc-c24d45c94eba'; // <-- COLOQUE SUA URL AQUI!
+        // *** PASSO CRÍTICO: SUBSTITUA ESTE PLACEHOLDER PELA SUA URL DE PRODUÇÃO DO WEBHOOK N8N ***
+        // Exemplo de como DEVE ser: 'https://n8n-prometheus.duckdns.org/webhook/seu_caminho_definido_no_n8n'
+        // NUNCA use a URL que contém '-test/' para sua página pública.
+        const n8nWebhookUrl = 'https://n8n-prometheus.duckdns.org/webhook-test/5a3746c9-4d77-475b-acdc-c24d45c94eba'; 
 
         const button = document.getElementById('gerarBoletimBtn');
         const outputDiv = document.getElementById('boletimOutput');
@@ -72,16 +75,19 @@
             try {
                 const response = await fetch(n8nWebhookUrl);
                 if (!response.ok) {
-                    throw new Error(`Erro na rede: ${response.status}`);
+                    // Se houver um erro de rede (incluindo CORS bloqueado),
+                    // o status pode ser 0 ou a requisição pode falhar completamente antes do status
+                    const errorMessage = `Erro na rede: ${response.status} ${response.statusText || ''}. Verifique se a URL do webhook está correta e se o n8n está acessível e configurado para CORS.`;
+                    throw new Error(errorMessage);
                 }
                 const data = await response.json();
                 console.log('Dados recebidos do n8n:', data);
 
-                // Assumindo que a saída do nó Code tem a chave 'boletimFormatado'
-                if (data && data.boletimFormatado) {
-                    outputDiv.innerHTML = data.boletimFormatado;
+                // Estamos procurando por 'formattedBulletin' (conforme o seu nó 'Code' envia)
+                if (data && data.formattedBulletin) {
+                    outputDiv.innerHTML = data.formattedBulletin;
                 } else {
-                    outputDiv.innerHTML = '<p>Erro: O formato do boletim não foi encontrado na resposta do n8n.</p>';
+                    outputDiv.innerHTML = '<p>Erro: O formato esperado do boletim (chave "formattedBulletin") não foi encontrado na resposta do n8n.</p>';
                 }
             } catch (error) {
                 console.error('Erro ao buscar o boletim:', error);
@@ -96,7 +102,7 @@
         button.addEventListener('click', getBoletim);
 
         // Opcional: Carregar o boletim automaticamente ao carregar a página
-        // window.addEventListener('load', getBoletim);
+        // window.addEventListener('load', getBoletim); 
     </script>
 </body>
 </html>
