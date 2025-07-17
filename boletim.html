@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boletim Climático</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #0056b3;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        #boletimOutput {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 150px; /* Um pouco mais alto para o conteúdo */
+            line-height: 1.6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745; /* Um verde para "gerar" */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Boletim Climático de Santa Rita do Sapucaí</h1>
+
+    <div id="controls">
+        <button id="gerarBoletimBtn">Obter Boletim Atual</button>
+    </div>
+
+    <div id="boletimOutput" class="loading">
+        Clique no botão "Obter Boletim Atual" para carregar as informações mais recentes.
+    </div>
+
+    <script>
+        // URL do seu Webhook do n8n (Trigger)
+        const n8nWebhookUrl = 'SUA_WEBHOOK_URL_DO_N8N_AQUI'; // <-- COLOQUE SUA URL AQUI!
+
+        const button = document.getElementById('gerarBoletimBtn');
+        const outputDiv = document.getElementById('boletimOutput');
+
+        async function getBoletim() {
+            outputDiv.innerHTML = '<p class="loading">Carregando boletim...</p>';
+            outputDiv.classList.add('loading'); 
+            button.disabled = true; // Desabilita o botão enquanto carrega
+
+            try {
+                const response = await fetch(n8nWebhookUrl);
+                if (!response.ok) {
+                    throw new Error(`Erro na rede: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Dados recebidos do n8n:', data);
+
+                // Assumindo que a saída do nó Code tem a chave 'boletimFormatado'
+                if (data && data.boletimFormatado) {
+                    outputDiv.innerHTML = data.boletimFormatado;
+                } else {
+                    outputDiv.innerHTML = '<p>Erro: O formato do boletim não foi encontrado na resposta do n8n.</p>';
+                }
+            } catch (error) {
+                console.error('Erro ao buscar o boletim:', error);
+                outputDiv.innerHTML = `<p style="color: red;">Erro ao carregar o boletim: ${error.message}. Por favor, tente novamente.</p>`;
+            } finally {
+                outputDiv.classList.remove('loading');
+                button.disabled = false; // Habilita o botão novamente
+            }
+        }
+
+        // Adiciona o evento de clique ao botão
+        button.addEventListener('click', getBoletim);
+
+        // Opcional: Carregar o boletim automaticamente ao carregar a página
+        // window.addEventListener('load', getBoletim);
+    </script>
+</body>
+</html>
